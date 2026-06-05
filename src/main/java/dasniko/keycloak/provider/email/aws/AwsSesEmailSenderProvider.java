@@ -28,6 +28,11 @@ public class AwsSesEmailSenderProvider implements EmailSenderProvider {
     }
 
     @Override
+    public void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
+        this.send(config, user.getEmail(), subject, textBody, htmlBody);
+    }
+
+    @Override
     public void send(Map<String, String> config, String user, String subject, String textBody, String htmlBody) throws EmailException {
 
         String from = config.get("from");
@@ -64,15 +69,24 @@ public class AwsSesEmailSenderProvider implements EmailSenderProvider {
 
         } catch (Exception e) {
             ServicesLogger.LOGGER.failedToSendEmail(e);
-            throw new EmailException(e);
+            throw new EmailException(e.toString());
+        }
+    }
+
+    @Override
+    public void validate(Map<String, String> config) throws EmailException {
+
+        String from = config.get("from");
+        if (from == null || from.isEmpty()) {
+            throw new EmailException("Missing 'from' email address.");
         }
     }
 
     private InternetAddress toInternetAddress(String email, String displayName) throws Exception {
-        if (email == null || "".equals(email.trim())) {
+        if (email == null || email.trim().isEmpty()) {
             throw new EmailException("Please provide a valid address", null);
         }
-        if (displayName == null || "".equals(displayName.trim())) {
+        if (displayName == null || displayName.trim().isEmpty()) {
             return new InternetAddress(email);
         }
         return new InternetAddress(email, displayName, StandardCharsets.UTF_8.toString());
